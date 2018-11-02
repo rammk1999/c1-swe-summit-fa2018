@@ -1,2 +1,2 @@
-# c1-swe-summit-fa2018
-Capital One Software Summit Submission Fall 2018
+##Capital One Software Summit Submission Fall 2018
+Submission for the final round of Capital One's SWE Summit (Winter 2018). Applicants were asked to create a webapp to analyze data and provide insightful visualizations and charts for the [coding challenge](https://www.mindsumo.com/contests/bikeshare-data). The challenge consisted of working with bike sharing data from Los Angeles. 
