@@ -181,14 +181,84 @@ def avg_dist_trav():
     avgDistancePerRide = totalDists/totalRides
     return avgDistancePerRide, avgBikerSpeed
 
-def generate_graphs():
-    popular_stations()
-    print("Generated popular station graphs")
-    bike_sharing_breakdown()
-    print("Generated bike sharing breakdown graphs")
-    avg_dist_trav();
-    print("Found average distance travelled")
+def seasonal_effects():
+    dataFrame = pd.read_csv("./data/metro-bike-share-trip-data.csv", low_memory=False)
+    colsOfInterest = dataFrame.columns[:-2].astype(str)
+    july = []
+    august = []
+    sept = []
+    oct = []
+    nov = []
+    dec = []
+    jan = []
+    feb = []
+    march = []
+    for row in dataFrame.itertuples():
+        monthNum = int(row[3][5:7])
+        if monthNum == 7:
+            july.append(row[1:-2])
+        if monthNum == 8:
+            august.append(row[1:-2])
+        if monthNum == 9:
+            sept.append(row[1:-2])
+        if monthNum == 10:
+            oct.append(row[1:-2])
+        if monthNum == 11:
+            nov.append(row[1:-2])
+        if monthNum == 12:
+            dec.append(row[1:-2])
+        if monthNum == 1:
+            jan.append(row[1:-2])
+        if monthNum == 2:
+            feb.append(row[1:-2])
+        if monthNum == 3:
+            march.append(row[1:-2])
 
+    julyDf = pd.DataFrame(data=july, columns=colsOfInterest)
+    augDf = pd.DataFrame(data=august, columns=colsOfInterest)
+    septDf = pd.DataFrame(data=sept, columns=colsOfInterest)
+    octDf = pd.DataFrame(data=oct, columns=colsOfInterest)
+    novDf = pd.DataFrame(data=nov, columns=colsOfInterest)
+    decDf = pd.DataFrame(data=dec, columns=colsOfInterest)
+    janDf = pd.DataFrame(data=jan, columns=colsOfInterest)
+    febDf = pd.DataFrame(data=feb, columns=colsOfInterest)
+    marchDf = pd.DataFrame(data=march, columns=colsOfInterest)
+
+    monthsDfs = [julyDf, augDf, septDf, octDf, novDf, decDf, janDf, febDf, marchDf]
+    regularsTrend = []
+    irregularsTrend = []
+    totalTrend = []
+    for dataFrame in monthsDfs:
+        monthPasses = dataFrame['Passholder Type'].astype(str)
+        regulars = len(monthPasses[monthPasses != "Walk-up"].index)
+        irregulars = len(monthPasses[monthPasses == "Walk-up"].index)
+        monthRides = regulars + irregulars
+        regularsTrend.append(regulars)
+        irregularsTrend.append(irregulars)
+        totalTrend.append(monthRides)
+    months = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    labels = ["Regular Users", "Irregular Users", "Total Users"]
+    plt.figure(figsize=(11,7))
+    sns.lineplot(x=months, y=regularsTrend)
+    sns.lineplot(x=months, y=irregularsTrend)
+    sns.lineplot(x=months, y=totalTrend)
+    plt.xlabel("Month Number (July to March)")
+    plt.ylabel("Total Rides")
+    plt.title("Monthly Impact on number of Users")
+    plt.tight_layout()
+    plt.legend(labels)
+    plt.savefig("./static/graphs/seasonEffects.png", bbox_inches = "tight", format= "png")
+
+
+def generate_graphs():
+    #popular_stations()
+    #print("Generated popular station graphs")
+    #bike_sharing_breakdown()
+    #print("Generated bike sharing breakdown graphs")
+    #avg_dist_trav();
+    #print("Found average distance travelled")
+    #seasonal_effects()
+    #print("Discovered seasonal effects")
 
 if __name__ == '__main__':
     generate_graphs()
