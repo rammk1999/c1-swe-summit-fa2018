@@ -250,6 +250,49 @@ def seasonal_effects():
     plt.savefig("./static/graphs/seasonEffects.png", bbox_inches = "tight", format= "png")
 
 
+def largest_net_change():
+    dataFrame = pd.read_csv('./data/metro-bike-share-trip-data.csv', low_memory=False)
+    colsOfInterest = ['Start Time', 'Starting Station ID', 'Ending Station ID']
+    stations = dataFrame[colsOfInterest].astype(str)
+    startStations = stations["Starting Station ID"]
+    startStationsSet = sorted(set(startStations))[:-1]
+    startUses = np.zeros(len(stations))
+    endStations = stations["Ending Station ID"]
+    endStationsSet = sorted(set(endStations))[:-1]
+    endUses = np.zeros(len(stations))
+    for i in range(len(startStationsSet)):
+        for station in startStations:
+            if startStationsSet[i] == station:
+                startUses[i] += 1
+    for i in range(len(endStationsSet)):
+        for station in endStations:
+            if endStationsSet[i] == station:
+                endUses[i] += 1
+    netUses = startUses - endUses
+    topTenInds = netUses.argsort()[:10] # top 10 biggest negative net differences
+    topLossStations = np.zeros(len(topTenInds))
+    netLosses = np.zeros(len(topTenInds))
+    for i in range(len(topTenInds)):
+        topLossStations[i] = startStationsSet[topTenInds[i]]
+        netLosses[i] = netUses[topTenInds[i]]
+    netLosses = abs(netLosses)
+
+    # calculate the duration of the data collection to find the avgerage loss per day
+    dates = dataFrame["Start Time"]
+    firstDay = dates[0]
+    lastDay = dates[dates.last_valid_index()]
+    d1 = filter_time(firstDay)
+    d2 = filter_time(lastDay)
+    totalDays = abs((d2-d1).days)
+    netLosses /= totalDays
+    plt.figure(figsize=(11,7))
+    sns.set_style("ticks")
+    sns.barplot(x=topLossStations, y=netLosses)
+    plt.xlabel("Station ID")
+    plt.ylabel("Average Bikes Moved per Day")
+    plt.tight_layout()
+    plt.title("Stations with the Most Displaced Bikes per Day")
+    plt.savefig("static/graphs/netChange.png", bbox_inches="tight", format="png")
 def generate_graphs():
     #popular_stations()
     #print("Generated popular station graphs")
@@ -259,6 +302,7 @@ def generate_graphs():
     #print("Found average distance travelled")
     #seasonal_effects()
     #print("Discovered seasonal effects")
+    largest_net_change()
 
 if __name__ == '__main__':
     generate_graphs()
