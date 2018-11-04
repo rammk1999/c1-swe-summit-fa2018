@@ -1,8 +1,9 @@
 # creates all the visuals for the webapp
 
-from math import radians, cos, sin, asin, sqrt
+from math import radians, cos, sin, asin, sqrt, isnan
 import numpy as np
 import pandas as pd
+import scipy as sp
 import seaborn as sns
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
@@ -116,7 +117,10 @@ def bike_sharing_breakdown():
     plt.savefig("static/graphs/passBreakdown.png", bbox_inches="tight", format="png")
 
 def avg_dist_trav():
-    def coordinate_dist(lat1, long1, lat2, long2): # Calculated using Haversine Formula
+    #Haversine formula for finding distances between two gps coordinates
+    def coordinate_dist(lat1, long1, lat2, long2):
+        if isnan(lat1) or isnan(long1) or isnan(lat2) or isnan(long2):
+            return 0
         if ((lat1==lat2) and (long1 == long2)):
             return 0
         R = 6371 # radius of earth in Kilometers
@@ -129,23 +133,44 @@ def avg_dist_trav():
         a = sin(deltaLat/2)**2 + cos(lat1) * cos(lat2) * sin(deltaLong/2)**2
         c = 2 * asin(sqrt(a))
         km = R * c
-        converstionFactor = 0.0621371 # go from kilometers to miles
+        converstionFactor = 0.621371 # go from kilometers to miles
         miles = km *converstionFactor
         return miles
 
-    dataFrame = pd.read_csv('./data/metro-bike-share-trip-data.csv', low_memory=False)
-    print(dataFrame)
+    dataFrame = pd.read_csv('./data/metro-bike-share-trip-data.csv', low_memory=False, encoding="utf-8")
     colsOfInterest = ["Duration", "Starting Station Latitude", "Starting Station Longitude",
                       "Ending Station Latitude", "Ending Station Longitude", "Trip Route Category"]
-    #dataFrame = dataFrame.astype(str)
-    #print(dataFrame)
+    dataFrame = dataFrame.astype(str)
     dataFrame = dataFrame[colsOfInterest]
-    print(dataFrame)
+    oneWays = dataFrame.loc[dataFrame["Trip Route Category"] == "One Way"]
+    roundTrips = dataFrame.loc[dataFrame["Trip Route Category"] == "Round Trip"]
+
+    ###################################################################################
+    # this section finds the average speed if the distance is unknown (aka Round-Trips)
+    avgSpeedsDf = oneWays[np.abs(sp.stats.zscore(oneWays["Duration"].astype(float))) < 3]
+    avgBikerSpeed = 0 # Miles/Hr
+    oneWayDists = [] # Converted to Miles
+    oneWayTimes = [] # Coverted to Hours
+    for row in avgSpeedsDf.itertuples():
+        tripDist = coordinate_dist(float(row[2]), float(row[3]), float(row[4]), float(row[5]))
+        oneWayDists.append(tripDist)
+        timeInSecs = float(row[1])
+        timeInHours = ((timeInSecs / 60)/60)
+        oneWayTimes.append(timeInHours)
+    oneWayTimes = np.array(oneWayTimes)
+    oneWayDists = np.array(oneWayDists)
+    oneWaySpeeds = oneWayDists/oneWayTimes
+    avgBikerSpeed = np.mean(oneWaySpeeds)
+    ####################################################################################
 
 def generate_graphs():
-    popular_stations()
-    bike_sharing_breakdown()
+    #popular_stations()
+    #print("Generated popular station sraphs")
+    #bike_sharing_breakdown()
+    #print("Generated bike sharing breakdown graphs")
     avg_dist_trav();
+    #print("Found average distance travelled")
+
 
 if __name__ == '__main__':
     generate_graphs()
