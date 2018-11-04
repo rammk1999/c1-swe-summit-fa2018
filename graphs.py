@@ -108,11 +108,11 @@ def bike_sharing_breakdown():
     # Barplot to show the number of regular vs irregular users of the bike sharing system
     plt.subplot(122)
     sns.set_style("ticks")
-    sns.barplot(x=["Irregular User Rides", "Regular User Rides"], y=[walkUpRides, regularRiders])
+    sns.barplot(x=["Irregular Riders", "Regular Riders"], y=[walkUpRides, regularRiders])
     plt.xlabel("Type of User")
     plt.ylabel("Number of total rides")
     plt.tight_layout();
-    plt.title("Users of Bike Sharing")
+    plt.title("Irregular vs Regular Riders")
 
     plt.savefig("static/graphs/passBreakdown.png", bbox_inches="tight", format="png")
 
@@ -148,28 +148,46 @@ def avg_dist_trav():
     ###################################################################################
     # this section finds the average speed if the distance is unknown (aka Round-Trips)
     avgSpeedsDf = oneWays[np.abs(sp.stats.zscore(oneWays["Duration"].astype(float))) < 3]
+    # avgSpeedsDf is a data frame where all trips with a duration over 3 standard deviations from the mean
+    # duration have been omitted for getting a more accurate average speed calculation
     avgBikerSpeed = 0 # Miles/Hr
-    oneWayDists = [] # Converted to Miles
-    oneWayTimes = [] # Coverted to Hours
+    oneWayDistsTrimmed = [] # Converted to Miles
+    oneWayTimesTrimmed = [] # Coverted to Hours
     for row in avgSpeedsDf.itertuples():
         tripDist = coordinate_dist(float(row[2]), float(row[3]), float(row[4]), float(row[5]))
-        oneWayDists.append(tripDist)
+        oneWayDistsTrimmed.append(tripDist)
         timeInSecs = float(row[1])
         timeInHours = ((timeInSecs / 60)/60)
-        oneWayTimes.append(timeInHours)
-    oneWayTimes = np.array(oneWayTimes)
-    oneWayDists = np.array(oneWayDists)
-    oneWaySpeeds = oneWayDists/oneWayTimes
+        oneWayTimesTrimmed.append(timeInHours)
+    oneWayTimesTrimmed = np.array(oneWayTimesTrimmed)
+    oneWayDistsTrimmed = np.array(oneWayDistsTrimmed)
+    oneWaySpeeds = oneWayDistsTrimmed/oneWayTimesTrimmed
     avgBikerSpeed = np.mean(oneWaySpeeds)
     ####################################################################################
 
+    oneWayDists = [] # In miles
+    for row in oneWays.itertuples():
+        tripDist = coordinate_dist(float(row[2]), float(row[3]), float(row[4]), float(row[5]))
+        oneWayDists.append(tripDist)
+    oneWayDists = np.array(oneWayDists)
+    roundTripDists = []
+    for row in roundTrips.itertuples():
+        timeInSecs = float(row[1])
+        timeInHours = ((timeInSecs/ 60)/60)
+        roundTripDists.append(timeInHours * avgBikerSpeed)
+    roundTripDists = np.array(roundTripDists)
+    totalDists = sum(oneWayDists) + sum(roundTripDists)
+    totalRides = len(oneWayDists) + len(roundTripDists)
+    avgDistancePerRide = totalDists/totalRides
+    return avgDistancePerRide, avgBikerSpeed
+
 def generate_graphs():
-    #popular_stations()
-    #print("Generated popular station sraphs")
-    #bike_sharing_breakdown()
-    #print("Generated bike sharing breakdown graphs")
+    popular_stations()
+    print("Generated popular station graphs")
+    bike_sharing_breakdown()
+    print("Generated bike sharing breakdown graphs")
     avg_dist_trav();
-    #print("Found average distance travelled")
+    print("Found average distance travelled")
 
 
 if __name__ == '__main__':
