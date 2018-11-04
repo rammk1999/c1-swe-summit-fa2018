@@ -6,8 +6,8 @@ import pandas as pd
 import scipy as sp
 import seaborn as sns
 import matplotlib.pyplot as plt
-plt.style.use('ggplot')
 from datetime import datetime
+plt.style.use('ggplot')
 
 def filter_time(time):
     datetime_format = "%Y-%m-%dT%H:%M:%S"
@@ -96,7 +96,7 @@ def bike_sharing_breakdown():
     for i in range(len(bikeDistrosTot)):
         labels[i] += ": " + str(bikeDistrosPerc[i]) + "%"
 
-    # Donut plot to show the pass distribution
+    # Donut plot to show the bike pass distribution
     plt.figure(figsize=(11,7))
     plt.subplot(121)
     plt.pie(bikeDistrosPerc, startangle=90)
@@ -293,6 +293,44 @@ def largest_net_change():
     plt.tight_layout()
     plt.title("Stations with the Most Displaced Bikes per Day")
     plt.savefig("static/graphs/netChange.png", bbox_inches="tight", format="png")
+
+    # looking specifically at station 3005 
+    colsOfInterest2 = ["Starting Station ID", "Ending Station Latitude", "Ending Station Longitude", "Trip Route Category"]
+    dataFrame = dataFrame[colsOfInterest2].astype(str)
+    oneWays = dataFrame.loc[dataFrame["Trip Route Category"] == "One Way"]
+    oneWays3005 = dataFrame.loc[dataFrame["Starting Station ID"] == "3005.0"]
+    oneWays3042 = dataFrame.loc[dataFrame["Starting Station ID"] == "3042.0"]
+    oneWayDispCoords3005 = oneWays3005[["Ending Station Latitude", "Ending Station Longitude"]]
+    oneWayDispCoords3042 = oneWays3042[["Ending Station Latitude", "Ending Station Longitude"]]
+    lats3005 = []
+    lons3005 = []
+    lats3042 = []
+    lons3042 = []
+    for row in oneWayDispCoords3005.itertuples():
+        if isnan(float(row[1])) or isnan(float(row[2])):
+            continue
+        else:
+            lats3005.append((float(row[1])))
+            lons3005.append((float(row[2])))
+    for row in oneWayDispCoords3042.itertuples():
+        if float(row[1]) == 0 or float(row[2]) == 0:
+            continue
+        else:
+            lats3042.append((float(row[1])))
+            lons3042.append((float(row[2])))
+
+    graph = plt.figure(figsize=(11,7)).add_subplot(111)
+    graph.scatter(lons3005, lats3005, marker= 'P', c="purple", label="Bikes from Station 3005")
+    graph.scatter(lons3042, lats3042, marker='v', c="pink", label="Bikes from Station 3042")
+    graph.scatter(-118.25905, 34.0485497,c= "black", marker="o", label="Station 3005")
+    graph.scatter(-118.23881, 34.0493011,c="black",  marker="s", label="Station 3042")
+    plt.title("Distribution of bikes from Stations 3005 and 3042")
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.legend()
+    plt.grid()
+    plt.savefig("static/graphs/bikeScatter.png", bbox_inches="tight", format="png")
+
 def generate_graphs():
     #popular_stations()
     #print("Generated popular station graphs")
