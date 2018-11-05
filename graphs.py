@@ -270,12 +270,12 @@ def largest_net_change():
                 endUses[i] += 1
     netUses = startUses - endUses
     topTenInds = netUses.argsort()[:10] # top 10 biggest negative net differences
-    topLossStations = np.zeros(len(topTenInds))
-    netLosses = np.zeros(len(topTenInds))
+    topGainStations = np.zeros(len(topTenInds))
+    netGains = np.zeros(len(topTenInds))
     for i in range(len(topTenInds)):
-        topLossStations[i] = startStationsSet[topTenInds[i]]
-        netLosses[i] = netUses[topTenInds[i]]
-    netLosses = abs(netLosses)
+        topGainStations[i] = startStationsSet[topTenInds[i]]
+        netGains[i] = netUses[topTenInds[i]]
+    netGains = abs(netGains)
 
     # calculate the duration of the data collection to find the avgerage loss per day
     dates = dataFrame["Start Time"]
@@ -284,64 +284,81 @@ def largest_net_change():
     d1 = filter_time(firstDay)
     d2 = filter_time(lastDay)
     totalDays = abs((d2-d1).days)
-    netLosses /= totalDays
+    netGains /= totalDays
+    ##print(netGains)
     plt.figure(figsize=(11,7))
+    #plt.subplot(121)
     sns.set_style("ticks")
-    sns.barplot(x=topLossStations, y=netLosses)
+    sns.barplot(x=topGainStations, y=netGains)
     plt.xlabel("Station ID")
-    plt.ylabel("Average Bikes Moved per Day")
+    plt.ylabel("Average Bikes Gained per Day")
     plt.tight_layout()
-    plt.title("Stations with the Most Displaced Bikes per Day")
+    plt.title("Stations with the Most Gained Bikes per Day")
     plt.savefig("static/graphs/netChange.png", bbox_inches="tight", format="png")
 
-    # looking specifically at station 3005 
-    colsOfInterest2 = ["Starting Station ID", "Ending Station Latitude", "Ending Station Longitude", "Trip Route Category"]
+
+    # looking specifically at station 3005 & 3042
+    colsOfInterest2 = ["Starting Station Latitude", "Starting Station Longitude", "Ending Station ID", "Trip Route Category"]
     dataFrame = dataFrame[colsOfInterest2].astype(str)
     oneWays = dataFrame.loc[dataFrame["Trip Route Category"] == "One Way"]
-    oneWays3005 = dataFrame.loc[dataFrame["Starting Station ID"] == "3005.0"]
-    oneWays3042 = dataFrame.loc[dataFrame["Starting Station ID"] == "3042.0"]
-    oneWayDispCoords3005 = oneWays3005[["Ending Station Latitude", "Ending Station Longitude"]]
-    oneWayDispCoords3042 = oneWays3042[["Ending Station Latitude", "Ending Station Longitude"]]
+    oneWays3005 = dataFrame.loc[dataFrame["Ending Station ID"] == "3005.0"]
+    oneWays3042 = dataFrame.loc[dataFrame["Ending Station ID"] == "3042.0"]
+    oneWayDispCoords3005 = oneWays3005[["Starting Station Latitude", "Starting Station Longitude"]]
+    oneWayDispCoords3042 = oneWays3042[["Starting Station Latitude", "Starting Station Longitude"]]
     lats3005 = []
     lons3005 = []
     lats3042 = []
     lons3042 = []
     for row in oneWayDispCoords3005.itertuples():
-        if isnan(float(row[1])) or isnan(float(row[2])):
+        if float(row[1])==0  or float(row[2])==0:
             continue
         else:
             lats3005.append((float(row[1])))
             lons3005.append((float(row[2])))
+
     for row in oneWayDispCoords3042.itertuples():
-        if float(row[1]) == 0 or float(row[2]) == 0:
+        if float(row[1])==0 or float(row[2])==0:
             continue
         else:
             lats3042.append((float(row[1])))
             lons3042.append((float(row[2])))
 
-    graph = plt.figure(figsize=(11,7)).add_subplot(111)
-    graph.scatter(lons3005, lats3005, marker= 'P', c="purple", label="Bikes from Station 3005")
-    graph.scatter(lons3042, lats3042, marker='v', c="pink", label="Bikes from Station 3042")
-    graph.scatter(-118.25905, 34.0485497,c= "black", marker="o", label="Station 3005")
-    graph.scatter(-118.23881, 34.0493011,c="black",  marker="s", label="Station 3042")
-    plt.title("Distribution of bikes from Stations 3005 and 3042")
+    plt.figure(figsize=(14,7))
+    plt.subplot(121)
+    plt.hexbin(lons3005, lats3005, gridsize=(15,15))
+    plt.title("Distribution of bikes from Station 3005")
     plt.xlabel("Longitude")
     plt.ylabel("Latitude")
-    plt.legend()
-    plt.grid()
-    plt.savefig("static/graphs/bikeScatter.png", bbox_inches="tight", format="png")
+
+    plt.subplot(122)
+    plt.hexbin(lons3042, lats3042, gridsize=(15,15))
+    plt.title("Distribution of bikes from Station 3042")
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.savefig("static/graphs/bikeHeat.png", bbox_inches="tight", format="png")
+
+    #graph = plt.figure(figsize=(11,7)).add_subplot(111)
+    #graph.scatter(lons3005, lats3005, marker= 'P', c="purple", label="Bikes going to Station 3005")
+    #graph.scatter(lons3042, lats3042, marker='v', c="pink", label="Bikes going to Station 3042")
+    #graph.scatter(-118.25905, 34.0485497,c= "black", marker="o", label="Station 3005")
+    #graph.scatter(-118.23881, 34.0493011,c="black",  marker="s", label="Station 3042")
+    #plt.title("Distribution of bikes from Stations 3005 and 3042")
+    #plt.xlabel("Longitude")
+    #plt.ylabel("Latitude")
+    #plt.legend()
+    #plt.grid()
+    #plt.savefig("static/graphs/bikeScatter.png", bbox_inches="tight", format="png")
 
 def generate_graphs():
-    #popular_stations()
-    #print("Generated popular station graphs")
-    #bike_sharing_breakdown()
-    #print("Generated bike sharing breakdown graphs")
-    #avg_dist_trav();
-    #print("Found average distance travelled")
-    #seasonal_effects()
-    #print("Discovered seasonal effects")
+    popular_stations()
+    print("Generated popular station graphs")
+    bike_sharing_breakdown()
+    print("Generated bike sharing breakdown graphs")
+    print("Found average distance travelled & average biker speed:" +  str(avg_dist_trav()))
+    seasonal_effects()
+    print("Discovered seasonal effects")
     largest_net_change()
+    print("Found net changes of bikes")
 
 if __name__ == '__main__':
     generate_graphs()
-    #print(plt.style.available)
