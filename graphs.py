@@ -285,9 +285,7 @@ def largest_net_change():
     d2 = filter_time(lastDay)
     totalDays = abs((d2-d1).days)
     netGains /= totalDays
-    ##print(netGains)
     plt.figure(figsize=(11,7))
-    #plt.subplot(121)
     sns.set_style("ticks")
     sns.barplot(x=topGainStations, y=netGains)
     plt.xlabel("Station ID")
@@ -336,18 +334,6 @@ def largest_net_change():
     plt.xlabel("Longitude")
     plt.ylabel("Latitude")
     plt.savefig("static/graphs/bikeHeat.png", bbox_inches="tight", format="png")
-
-    #graph = plt.figure(figsize=(11,7)).add_subplot(111)
-    #graph.scatter(lons3005, lats3005, marker= 'P', c="purple", label="Bikes going to Station 3005")
-    #graph.scatter(lons3042, lats3042, marker='v', c="pink", label="Bikes going to Station 3042")
-    #graph.scatter(-118.25905, 34.0485497,c= "black", marker="o", label="Station 3005")
-    #graph.scatter(-118.23881, 34.0493011,c="black",  marker="s", label="Station 3042")
-    #plt.title("Distribution of bikes from Stations 3005 and 3042")
-    #plt.xlabel("Longitude")
-    #plt.ylabel("Latitude")
-    #plt.legend()
-    #plt.grid()
-    #plt.savefig("static/graphs/bikeScatter.png", bbox_inches="tight", format="png")
 
 def generate_graphs():
     popular_stations()
